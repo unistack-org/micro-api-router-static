@@ -8,13 +8,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/micro/go-micro/v3/api"
-	"github.com/micro/go-micro/v3/api/router"
-	"github.com/micro/go-micro/v3/logger"
-	"github.com/micro/go-micro/v3/metadata"
-	"github.com/micro/go-micro/v3/registry"
-	rutil "github.com/micro/go-micro/v3/util/registry"
-	util "github.com/micro/go-micro/v3/util/router"
+	"github.com/unistack-org/micro/v3/api"
+	"github.com/unistack-org/micro/v3/api/router"
+	"github.com/unistack-org/micro/v3/logger"
+	"github.com/unistack-org/micro/v3/metadata"
+	"github.com/unistack-org/micro/v3/registry"
+	rutil "github.com/unistack-org/micro/v3/util/registry"
+	util "github.com/unistack-org/micro/v3/util/router"
 )
 
 type endpoint struct {
@@ -177,7 +177,7 @@ func (r *staticRouter) Endpoint(req *http.Request) (*api.Service, error) {
 	}
 
 	epf := strings.Split(ep.apiep.Name, ".")
-	services, err := r.opts.Registry.GetService(epf[0])
+	services, err := r.opts.Registry.GetService(r.opts.Context, epf[0])
 	if err != nil {
 		return nil, err
 	}
@@ -249,8 +249,8 @@ func (r *staticRouter) endpoint(req *http.Request) (*endpoint, error) {
 		if !mMatch {
 			continue
 		}
-		if logger.V(logger.DebugLevel, logger.DefaultLogger) {
-			logger.Debugf("api method match %s", req.Method)
+		if logger.V(logger.TraceLevel) {
+			logger.Tracef("api method match %s", req.Method)
 		}
 
 		// 2. try host
@@ -272,21 +272,21 @@ func (r *staticRouter) endpoint(req *http.Request) (*endpoint, error) {
 		if !hMatch {
 			continue
 		}
-		if logger.V(logger.DebugLevel, logger.DefaultLogger) {
-			logger.Debugf("api host match %s", req.URL.Host)
+		if logger.V(logger.TraceLevel) {
+			logger.Tracef("api host match %s", req.URL.Host)
 		}
 
 		// 3. try google.api path
 		for _, pathreg := range ep.pathregs {
 			matches, err := pathreg.Match(path, "")
 			if err != nil {
-				if logger.V(logger.DebugLevel, logger.DefaultLogger) {
-					logger.Debugf("api gpath not match %s != %v", path, pathreg)
+				if logger.V(logger.TraceLevel) {
+					logger.Tracef("api gpath not match %s != %v", path, pathreg)
 				}
 				continue
 			}
-			if logger.V(logger.DebugLevel, logger.DefaultLogger) {
-				logger.Debugf("api gpath match %s = %v", path, pathreg)
+			if logger.V(logger.TraceLevel) {
+				logger.Tracef("api gpath match %s = %v", path, pathreg)
 			}
 			pMatch = true
 			ctx := req.Context()
@@ -306,8 +306,8 @@ func (r *staticRouter) endpoint(req *http.Request) (*endpoint, error) {
 			// 4. try path via pcre path matching
 			for _, pathreg := range ep.pcreregs {
 				if !pathreg.MatchString(req.URL.Path) {
-					if logger.V(logger.DebugLevel, logger.DefaultLogger) {
-						logger.Debugf("api pcre path not match %s != %v", req.URL.Path, pathreg)
+					if logger.V(logger.TraceLevel) {
+						logger.Tracef("api pcre path not match %s != %v", req.URL.Path, pathreg)
 					}
 					continue
 				}
@@ -343,7 +343,18 @@ func (r *staticRouter) Route(req *http.Request) (*api.Service, error) {
 	return ep, nil
 }
 
-func NewRouter(opts ...router.Option) *staticRouter {
+func (r *staticRouter) Init(opts ...router.Option) error {
+	for _, o := range opts {
+		o(&r.opts)
+	}
+	return nil
+}
+
+func (r *staticRouter) String() string {
+	return "static"
+}
+
+func NewRouter(opts ...router.Option) router.Router {
 	options := router.NewOptions(opts...)
 	r := &staticRouter{
 		exit: make(chan bool),
