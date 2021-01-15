@@ -250,7 +250,7 @@ func (r *staticRouter) endpoint(req *http.Request) (*endpoint, error) {
 			continue
 		}
 		if logger.V(logger.TraceLevel) {
-			logger.Tracef("api method match %s", req.Method)
+			logger.Tracef(r.opts.Context, "api method match %s", req.Method)
 		}
 
 		// 2. try host
@@ -273,7 +273,7 @@ func (r *staticRouter) endpoint(req *http.Request) (*endpoint, error) {
 			continue
 		}
 		if logger.V(logger.TraceLevel) {
-			logger.Tracef("api host match %s", req.URL.Host)
+			logger.Tracef(r.opts.Context, "api host match %s", req.URL.Host)
 		}
 
 		// 3. try google.api path
@@ -281,12 +281,12 @@ func (r *staticRouter) endpoint(req *http.Request) (*endpoint, error) {
 			matches, err := pathreg.Match(path, "")
 			if err != nil {
 				if logger.V(logger.TraceLevel) {
-					logger.Tracef("api gpath not match %s != %v", path, pathreg)
+					logger.Tracef(r.opts.Context, "api gpath not match %s != %v", path, pathreg)
 				}
 				continue
 			}
 			if logger.V(logger.TraceLevel) {
-				logger.Tracef("api gpath match %s = %v", path, pathreg)
+				logger.Tracef(r.opts.Context, "api gpath match %s = %v", path, pathreg)
 			}
 			pMatch = true
 			ctx := req.Context()
@@ -307,7 +307,7 @@ func (r *staticRouter) endpoint(req *http.Request) (*endpoint, error) {
 			for _, pathreg := range ep.pcreregs {
 				if !pathreg.MatchString(req.URL.Path) {
 					if logger.V(logger.TraceLevel) {
-						logger.Tracef("api pcre path not match %s != %v", req.URL.Path, pathreg)
+						logger.Tracef(r.opts.Context, "api pcre path not match %s != %v", req.URL.Path, pathreg)
 					}
 					continue
 				}
