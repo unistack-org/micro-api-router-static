@@ -12,8 +12,8 @@ import (
 	"github.com/unistack-org/micro/v3/api/router"
 	"github.com/unistack-org/micro/v3/logger"
 	"github.com/unistack-org/micro/v3/metadata"
-	"github.com/unistack-org/micro/v3/registry"
-	rutil "github.com/unistack-org/micro/v3/util/registry"
+	"github.com/unistack-org/micro/v3/register"
+	rutil "github.com/unistack-org/micro/v3/util/register"
 	util "github.com/unistack-org/micro/v3/util/router"
 )
 
@@ -177,7 +177,7 @@ func (r *staticRouter) Endpoint(req *http.Request) (*api.Service, error) {
 	}
 
 	epf := strings.Split(ep.apiep.Name, ".")
-	services, err := r.opts.Registry.GetService(r.opts.Context, epf[0])
+	services, err := r.opts.Register.LookupService(r.opts.Context, epf[0])
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (r *staticRouter) Endpoint(req *http.Request) (*api.Service, error) {
 		svcs := rutil.Copy(services)
 		for _, svc := range svcs {
 			if len(svc.Endpoints) == 0 {
-				e := &registry.Endpoint{}
+				e := &register.Endpoint{}
 				e.Name = strings.Join(epf[1:], ".")
 				e.Metadata = make(map[string]string)
 				e.Metadata["stream"] = "true"
